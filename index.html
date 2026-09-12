@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>미팅노트 - AI 회의 정리 서비스</title>
+<style>
+  :root {
+    --color-bg: #f7f7f5;
+    --color-surface: #ffffff;
+    --color-border: #e2e0db;
+    --color-text: #2b2a27;
+    --color-text-muted: #6b6a66;
+    --color-primary: #2f6f4f;
+    --color-primary-hover: #26593f;
+    --color-primary-text: #ffffff;
+    --color-step-bg: #eef3ee;
+    --radius: 10px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+      "Noto Sans KR", "Malgun Gothic", sans-serif;
+    line-height: 1.6;
+    padding: 24px 16px 64px;
+  }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  header.hero {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header.hero h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+
+  header.hero p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 16px;
+  }
+
+  .guide {
+    background: var(--color-step-bg);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 28px;
+  }
+
+  .guide h2 {
+    font-size: 14px;
+    margin: 0 0 10px;
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  .guide ol {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .guide li {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .guide li:last-child {
+    margin-bottom: 0;
+  }
+
+  section.card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  label.field-label {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  textarea#meeting-input {
+    width: 100%;
+    min-height: 220px;
+    resize: vertical;
+    padding: 14px;
+    font-size: 15px;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  textarea#meeting-input:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+
+  .char-count {
+    text-align: right;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-top: 6px;
+  }
+
+  .input-hint {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+
+  .example-box {
+    border: 1px dashed var(--color-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: var(--color-bg);
+    margin-bottom: 14px;
+  }
+
+  .example-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .example-box-header span {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .example-text {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text);
+    line-height: 1.6;
+  }
+
+  button#use-example-btn {
+    flex: none;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--color-primary);
+    background: none;
+    border: 1px solid var(--color-primary);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+
+  button#use-example-btn:hover {
+    background: var(--color-step-bg);
+  }
+
+  button#summarize-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-primary-text);
+    background: var(--color-primary);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+
+  button#summarize-btn:hover {
+    background: var(--color-primary-hover);
+  }
+
+  button#summarize-btn:disabled {
+    background: #a9a9a4;
+    cursor: not-allowed;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .result-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  #result-area {
+    min-height: 120px;
+    font-size: 15px;
+    color: var(--color-text);
+    white-space: pre-wrap;
+  }
+
+  #result-area.empty {
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px 8px;
+  }
+
+  .result-block {
+    margin-bottom: 16px;
+  }
+
+  .result-block:last-child {
+    margin-bottom: 0;
+  }
+
+  .result-block h3 {
+    font-size: 14px;
+    margin: 0 0 8px;
+    color: var(--color-primary);
+  }
+
+  .result-block ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .result-block li {
+    margin-bottom: 4px;
+  }
+
+  footer.notice {
+    text-align: center;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-top: 8px;
+  }
+
+  @media (max-width: 480px) {
+    header.hero h1 {
+      font-size: 24px;
+    }
+
+    section.card {
+      padding: 16px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <h1>미팅노트</h1>
+    <p>회의 내용을 붙여넣으면 핵심만 정리해드려요.</p>
+  </header>
+
+  <div class="guide">
+    <h2>사용 방법</h2>
+    <ol>
+      <li>아래 입력창에 회의록이나 대화 내용을 붙여넣으세요.</li>
+      <li>'회의 내용 정리하기' 버튼을 누르세요.</li>
+      <li>정리된 핵심 내용을 아래에서 확인하세요.</li>
+    </ol>
+  </div>
+
+  <section class="card">
+    <label class="field-label" for="meeting-input">회의 내용 입력</label>
+    <p class="input-hint">회의 중 나온 대화나 메모를 형식에 상관없이 그대로 붙여넣으세요. 발언자, 결정사항, 다음 할 일이 담겨 있으면 더 정확하게 정리돼요.</p>
+
+    <div class="example-box">
+      <div class="example-box-header">
+        <span>입력 예시</span>
+        <button type="button" id="use-example-btn">이 예시로 채우기</button>
+      </div>
+      <p class="example-text">김대리: 3분기 마케팅 예산은 전분기 대비 10% 증액하기로 했습니다. 박과장: SNS 광고 비중을 늘리는 게 좋겠어요. 이팀장: 좋습니다, 채널별 예산안은 이번 주 금요일까지 정리해서 공유해 주세요.</p>
+    </div>
+
+    <textarea id="meeting-input" placeholder="예) 오늘 회의에서는 3분기 마케팅 예산안을 논의했습니다. 김대리는 SNS 광고 비중을 늘리자고 제안했고..."></textarea>
+    <div class="char-count"><span id="char-count-num">0</span>자 입력됨</div>
+  </section>
+
+  <button id="summarize-btn" type="button">회의 내용 정리하기</button>
+
+  <section class="card">
+    <div class="result-header">
+      <h2>정리 결과</h2>
+    </div>
+    <div id="result-area" class="empty">
+      아직 정리된 내용이 없어요. 회의 내용을 입력하고 버튼을 눌러보세요.
+    </div>
+  </section>
+
+  <footer class="notice">
+    지금은 화면 동작을 보여주는 데모예요. 실제 정리 기능은 준비 중입니다.
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var textarea = document.getElementById('meeting-input');
+    var charCountNum = document.getElementById('char-count-num');
+    var summarizeBtn = document.getElementById('summarize-btn');
+    var resultArea = document.getElementById('result-area');
+    var useExampleBtn = document.getElementById('use-example-btn');
+    var exampleText = document.querySelector('.example-text').textContent.trim();
+
+    textarea.addEventListener('input', function () {
+      charCountNum.textContent = textarea.value.length;
+    });
+
+    useExampleBtn.addEventListener('click', function () {
+      textarea.value = exampleText;
+      charCountNum.textContent = textarea.value.length;
+      textarea.focus();
+    });
+
+    function splitIntoSentences(text) {
+      return text
+        .split(/(?<=[.!?。\n])\s*/)
+        .map(function (s) { return s.trim(); })
+        .filter(function (s) { return s.length > 0; });
+    }
+
+    function buildDemoSummary(text) {
+      var sentences = splitIntoSentences(text);
+      var keyPoints = sentences.slice(0, Math.min(3, sentences.length));
+
+      var actionKeywords = ['해야', '하기로', '진행', '요청', '부탁', '담당', '까지'];
+      var actionItems = sentences.filter(function (s) {
+        return actionKeywords.some(function (kw) { return s.indexOf(kw) !== -1; });
+      }).slice(0, 3);
+
+      var html = '';
+
+      html += '<div class="result-block">';
+      html += '<h3>핵심 내용</h3><ul>';
+      if (keyPoints.length > 0) {
+        keyPoints.forEach(function (p) {
+          html += '<li>' + escapeHtml(p) + '</li>';
+        });
+      } else {
+        html += '<li>내용을 더 입력하면 핵심 내용을 정리해드려요.</li>';
+      }
+      html += '</ul></div>';
+
+      html += '<div class="result-block">';
+      html += '<h3>할 일 / 액션 아이템</h3><ul>';
+      if (actionItems.length > 0) {
+        actionItems.forEach(function (a) {
+          html += '<li>' + escapeHtml(a) + '</li>';
+        });
+      } else {
+        html += '<li>뚜렷한 할 일이 발견되지 않았어요.</li>';
+      }
+      html += '</ul></div>';
+
+      return html;
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    summarizeBtn.addEventListener('click', function () {
+      var text = textarea.value.trim();
+
+      if (!text) {
+        resultArea.className = 'empty';
+        resultArea.textContent = '먼저 회의 내용을 입력해주세요.';
+        textarea.focus();
+        return;
+      }
+
+      summarizeBtn.disabled = true;
+      summarizeBtn.textContent = '정리하는 중...';
+      resultArea.className = '';
+      resultArea.innerHTML = '';
+
+      setTimeout(function () {
+        resultArea.innerHTML = buildDemoSummary(text);
+        summarizeBtn.disabled = false;
+        summarizeBtn.textContent = '회의 내용 정리하기';
+      }, 600);
+    });
+  })();
+</script>
+
+</body>
+</html>
